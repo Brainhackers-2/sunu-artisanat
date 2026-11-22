@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import PaymentActionPanel from "@/components/payment/PaymentActionPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,17 @@ export default async function SuiviCommandePage({ params, searchParams }: Props)
             {order.totalAmountFCFA.toLocaleString("fr-FR")} FCFA
           </p>
         </div>
+      </div>
+
+      {/* Panneau d'action de paiement / statut */}
+      <div className="mb-6">
+        <PaymentActionPanel
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          totalAmountFCFA={order.totalAmountFCFA}
+          paymentStatus={order.payments[0]?.status ?? "PENDING"}
+          isSimulated={order.payments[0]?.isSimulated ?? true}
+        />
       </div>
 
       {/* Liste des sous-commandes par atelier */}
