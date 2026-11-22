@@ -88,17 +88,25 @@ export default async function ComptePage() {
 
         {/* Quick Stats / Navigation */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#C2410C]/10 text-[#C2410C]">
-                <ShoppingBag className="w-5 h-5" />
+          <Link
+            href="/compte/commandes"
+            className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm hover:border-[#125B3E] transition-all group block"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#C2410C]/10 text-[#C2410C] group-hover:bg-[#125B3E]/10 group-hover:text-[#125B3E] transition-colors">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500 font-medium">Commandes passées</span>
+                  <p className="text-lg font-bold text-[#131622]">{profile?.orders.length || 0}</p>
+                </div>
               </div>
-              <div>
-                <span className="text-xs text-stone-500 font-medium">Commandes passées</span>
-                <p className="text-lg font-bold text-[#131622]">{profile?.orders.length || 0}</p>
-              </div>
+              <span className="text-xs font-semibold text-[#125B3E] group-hover:translate-x-0.5 transition-transform">
+                Voir tout →
+              </span>
             </div>
-          </div>
+          </Link>
 
           <div className="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
             <div className="flex items-center gap-3">
