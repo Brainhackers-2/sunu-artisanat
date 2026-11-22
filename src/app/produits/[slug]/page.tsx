@@ -1,1 +1,1 @@
-export { default, generateMetadata, dynamic } from "@/app/boutique/[slug]/page";
+export { default, generateMetadata } from "@/app/boutique/[slug]/page";

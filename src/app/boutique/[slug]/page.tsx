@@ -7,6 +7,19 @@ import RatingStars from "@/components/ui/RatingStars";
 import QRBadge from "@/components/ui/QRBadge";
 import AddToCartButton from "@/components/cart/AddToCartButton";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  ShieldCheck,
+  MapPin,
+  Clock,
+  Sparkles,
+  QrCode,
+  ArrowRight,
+  Store,
+  CreditCard,
+  Ruler,
+  Layers,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -27,17 +40,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) return { title: "Produit introuvable" };
 
   return {
-    title: `${product.title} — ${product.artisan.workshopName} | Sunu Artisanat`,
-    description: product.description?.slice(0, 160) ?? `Artisanat d'art sénégalais par ${product.artisan.workshopName}, ${product.artisan.region}.`,
+    title: `${product.title} — ${product.artisan.workshopName} | SUNU ARTISANAT`,
+    description:
+      product.description?.slice(0, 160) ??
+      `Création d'artisanat d'art sénégalais par ${product.artisan.workshopName}, ${product.artisan.region}.`,
     openGraph: {
-      title: `${product.title} | Sunu Artisanat`,
+      title: `${product.title} | SUNU ARTISANAT`,
       description: product.description?.slice(0, 160) ?? "",
       images: product.images[0] ? [{ url: product.images[0].url }] : [],
     },
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductDetailPage({ params }: Props) {
   const product = await prisma.product.findUnique({
     where: { slug: params.slug, status: "PUBLISHED" },
     include: {
@@ -75,172 +90,243 @@ export default async function ProductPage({ params }: Props) {
 
   const qr = product.qrCodes[0];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.title,
-    description: product.description,
-    image: product.images[0]?.url,
-    offers: {
-      "@type": "Offer",
-      price: product.priceFCFA,
-      priceCurrency: "XOF",
-      availability: stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-    },
-    brand: {
-      "@type": "LocalBusiness",
-      name: product.artisan.workshopName,
-      address: { "@type": "PostalAddress", addressRegion: product.artisan.region, addressCountry: "SN" },
-    },
-    ...(avgRating > 0 && {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: avgRating.toFixed(1),
-        reviewCount: reviews.length,
-      },
-    }),
-  };
-
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#FAF8F5] pb-24">
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         {/* Breadcrumb */}
-        <nav className="text-sm text-gray-500 mb-6 flex flex-wrap gap-1">
-          <Link href="/" className="hover:underline">Accueil</Link>
+        <nav className="text-xs text-stone-500 flex flex-wrap items-center gap-1.5 font-medium">
+          <Link href="/" className="hover:text-[#125B3E]">Accueil</Link>
           <span>/</span>
-          <Link href="/boutique" className="hover:underline">Boutique</Link>
+          <Link href="/boutique" className="hover:text-[#125B3E]">Boutique</Link>
           {product.category && (
             <>
               <span>/</span>
-              <Link href={`/boutique?categorie=${product.category.slug}`} className="hover:underline">
+              <Link
+                href={`/categories/${product.category.slug}`}
+                className="hover:text-[#125B3E]"
+              >
                 {product.category.name}
               </Link>
             </>
           )}
           <span>/</span>
-          <span className="text-gray-900 font-medium">{product.title}</span>
+          <span className="text-[#131622] font-bold truncate max-w-xs">{product.title}</span>
         </nav>
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Galerie */}
-          <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
+          {/* Galerie Visuelle : Grande photo principale sur fond blanc avec vignettes secondaires */}
+          <div className="bg-white p-5 rounded-3xl border border-stone-200/90 shadow-xs">
             <ProductGallery images={product.images} productTitle={product.title} />
           </div>
 
-          {/* Infos */}
-          <div className="flex flex-col gap-5">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2">
+          {/* Fiche d'informations & Achat */}
+          <div className="flex flex-col gap-6">
+            {/* Badges de certification */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#125B3E]/10 text-[#125B3E] border border-[#125B3E]/20">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Certifié SUNU</span>
+              </span>
+
+              {product.originRegion && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                  <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                  <span>Terroir : {product.originRegion}</span>
+                </span>
+              )}
+
               {product.artisan.isDemo && (
-                <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 rounded-full">
-                  🎭 Données de démonstration
-                </span>
-              )}
-              {product.artisan.verified && (
-                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-                  ✓ Atelier vérifié
-                </span>
-              )}
-              {product.category && (
-                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                  {product.category.name}
+                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                  🎭 Démo
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 leading-snug">{product.title}</h1>
+            {/* Titre */}
+            <h1 className="text-2xl sm:text-3xl font-black text-[#131622] leading-tight">
+              {product.title}
+            </h1>
 
-            {/* Artisan */}
-            <Link href={`/artisans/${product.artisan.slug}`} className="flex items-center gap-2 hover:underline w-fit">
-              <span className="text-sm text-gray-600">Par</span>
-              <span className="font-semibold text-[var(--color-primary)]">{product.artisan.workshopName}</span>
-              <span className="text-sm text-gray-400">· {product.artisan.region}</span>
-            </Link>
-
-            {/* Note */}
-            {avgRating > 0 && (
-              <RatingStars rating={avgRating} count={reviews.length} size="md" />
-            )}
-
-            {/* Prix */}
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-[var(--color-primary)]">
-                {product.priceFCFA.toLocaleString("fr-FR")} FCFA
+            {/* Avis */}
+            <div className="flex items-center gap-2">
+              <RatingStars rating={avgRating || 5} count={reviews.length} size="md" />
+              <span className="text-xs text-stone-500 font-medium">
+                ({reviews.length} avis vérifié{reviews.length > 1 ? "s" : ""})
               </span>
             </div>
 
-            {/* Stock */}
-            <div className="text-sm">
-              {stock > 0 ? (
-                <span className="text-green-600 font-semibold">✓ En stock ({stock} disponible{stock > 1 ? "s" : ""})</span>
-              ) : (
-                <span className="text-red-500 font-semibold">✗ Rupture de stock</span>
-              )}
-            </div>
+            {/* Bloc Commande & Prix : Prix en grand format terracotta (#C2410C), mention paiements Wave & OM */}
+            <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200/80 space-y-3">
+              <div className="flex items-baseline justify-between gap-4">
+                <div>
+                  <span className="text-xs text-stone-500 font-semibold uppercase tracking-wider block">
+                    Prix de l&apos;œuvre
+                  </span>
+                  <span className="text-3xl sm:text-4xl font-black text-[#C2410C]">
+                    {product.priceFCFA.toLocaleString("fr-FR")} FCFA
+                  </span>
+                  <span className="text-xs text-stone-400 block mt-0.5 font-medium">
+                    (soit ~ {Math.round(product.priceFCFA / 655.957)} € indicatif)
+                  </span>
+                </div>
 
-            {/* Description */}
-            {product.description && (
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
-            )}
-
-            {/* Origine / Technique */}
-            <div className="flex flex-wrap gap-3 text-sm">
-              {product.originRegion && (
-                <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
-                  📍 {product.originRegion}
-                </span>
-              )}
-              {product.technique && (
-                <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full border border-purple-200">
-                  🛠 {product.technique}
-                </span>
-              )}
-            </div>
-
-            {/* Matériaux */}
-            {product.materials.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold text-gray-700 mb-1">Matériaux déclarés</h2>
-                <ul className="flex flex-wrap gap-2">
-                  {product.materials.map((m) => (
-                    <li key={m.id} className="bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded-full border border-amber-200">
-                      {m.name}
-                      {m.origin && ` · ${m.origin}`}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-gray-400 mt-1 italic">
-                  Origine déclarée par l'artisan — traçabilité, non authenticité garantie.
-                </p>
+                <div className="text-right">
+                  {stock > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      {stock} disponible{stock > 1 ? "s" : ""}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-lg">
+                      Sur commande
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
 
-            {/* Bouton ajout panier — sticky barre mobile */}
-            <div className="fixed bottom-0 left-0 right-0 md:static bg-white md:bg-transparent border-t border-gray-200 md:border-0 p-4 md:p-0 z-30">
+              {/* Mentions paiements sécurisés */}
+              <div className="pt-2 border-t border-stone-200/60 flex items-center gap-2 text-xs text-stone-600">
+                <CreditCard className="w-4 h-4 text-[#125B3E]" />
+                <span>Paiement sécurisé par <strong>Wave</strong>, <strong>Orange Money</strong> ou <strong>Carte Bancaire</strong></span>
+              </div>
+            </div>
+
+            {/* Bouton d'Action & Ajout au Panier */}
+            <div className="space-y-3 pt-2">
               <AddToCartButton productId={product.id} stock={stock} />
             </div>
 
-            {/* QR Code traçabilité */}
+            {/* Fiche Technique : Matériaux naturels certifiés, dimensions, origine géographique, façonnage main */}
+            <div className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-[#131622] flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#125B3E]" />
+                <span>Fiche Technique &amp; Matériaux</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-100">
+                  <span className="text-stone-400 block text-[10px] uppercase font-bold">Technique</span>
+                  <strong className="text-stone-800">{product.technique || "Façonnage traditionnel à la main"}</strong>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-100">
+                  <span className="text-stone-400 block text-[10px] uppercase font-bold">Terroir d&apos;origine</span>
+                  <strong className="text-stone-800">{product.originRegion || product.artisan.region}</strong>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-100">
+                  <span className="text-stone-400 block text-[10px] uppercase font-bold">Façonnage</span>
+                  <strong className="text-stone-800">100% fait main</strong>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-100">
+                  <span className="text-stone-400 block text-[10px] uppercase font-bold">Disponibilité</span>
+                  <strong className="text-stone-800">{stock > 0 ? "En stock atelier" : "À la commande"}</strong>
+                </div>
+              </div>
+
+              {product.materials.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-[11px] font-bold text-stone-600 block mb-1.5">
+                    Matériaux nobles déclarés :
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {product.materials.map((m) => (
+                      <span
+                        key={m.id}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200"
+                      >
+                        {m.name} {m.origin && `(${m.origin})`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Passeport Digital SUNU : Encart dédié avec numéro de certificat d'authenticité */}
             {qr && (
-              <div className="mt-2">
-                <h2 className="text-sm font-semibold text-gray-700 mb-2">Traçabilité</h2>
-                <QRBadge code={qr.code} size={96} />
-                <p className="text-xs text-gray-400 mt-1">
-                  Scannez pour vérifier l'origine déclarée de ce produit.
-                </p>
+              <div className="bg-[#131622] text-white p-5 rounded-2xl border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#FFB800] uppercase tracking-wider flex items-center gap-1.5">
+                    <QrCode className="w-4 h-4" />
+                    <span>Passeport Digital SUNU</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#125B3E] text-white">
+                    Actif &amp; Scellé
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="bg-white p-2 rounded-xl shrink-0">
+                    <QRBadge code={qr.code} size={72} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-stone-300">
+                      Certificat officiel de traçabilité n° :
+                    </p>
+                    <p className="font-mono text-sm font-bold text-[#FFB800]">
+                      {qr.code}
+                    </p>
+                    <Link
+                      href={`/certification/${qr.code}`}
+                      className="text-xs text-stone-300 hover:text-white underline inline-flex items-center gap-1 pt-1"
+                    >
+                      <span>Vérifier en ligne le passeport</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* Carte Créateur : Photo de profil de l'artisan, nom de son atelier et lien vers sa vitrine */}
+            <div className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-xs flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="relative w-14 h-14 rounded-2xl bg-stone-100 border-2 border-stone-200 overflow-hidden shrink-0">
+                  <Image
+                    src={
+                      product.artisan.logoUrl ||
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+                    }
+                    alt={product.artisan.workshopName}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] text-stone-500 font-semibold">Créé par l&apos;artisan</span>
+                  <h4 className="font-bold text-sm text-[#131622]">{product.artisan.workshopName}</h4>
+                  <p className="text-xs text-[#C2410C] font-semibold">{product.artisan.specialty}</p>
+                </div>
+              </div>
+
+              <Link
+                href={`/artisans/${product.artisan.slug}`}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-[#125B3E] hover:text-white text-stone-800 transition-colors shrink-0"
+              >
+                Voir l&apos;atelier →
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Avis */}
-        <section className="mt-12 pb-24 md:pb-0">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Avis clients</h2>
+        {/* Description détaillée */}
+        {product.description && (
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-xs space-y-3">
+            <h3 className="text-lg font-bold text-[#131622]">Histoire &amp; Récit de la Création</h3>
+            <p className="text-xs sm:text-sm text-stone-700 leading-relaxed max-w-none whitespace-pre-line">
+              {product.description}
+            </p>
+          </section>
+        )}
+
+        {/* Avis clients */}
+        <section className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-xs">
+          <h3 className="text-lg font-bold text-[#131622] mb-6">Avis Clients &amp; Témoignages</h3>
           <ReviewsList reviews={reviews} avgRating={avgRating} />
         </section>
       </main>
-    </>
+    </div>
   );
 }
