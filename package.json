@@ -13,6 +13,7 @@
     "test:catalogue": "tsx tests/test-catalogue.ts",
     "test:orders": "tsx tests/test-orders-multivendor.ts",
     "test:payments": "tsx tests/test-payments-payouts.ts",
+    "test:artisan-admin": "tsx tests/test-artisan-admin-advanced.ts",
     "prisma:generate": "prisma generate",
     "prisma:seed": "node prisma/seed.js"
   },

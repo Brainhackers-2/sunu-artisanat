@@ -36,9 +36,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Navigation filtrée selon les permissions de la section 4
   const navItems = [
     { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
+    { label: "Modération Produits", href: "/admin/produits", icon: Layers, hiddenForEditor: false },
     { label: "Artisans & Ateliers", href: "/admin/artisans", icon: Store, hiddenForEditor: true },
     { label: "Reversements", href: "/admin/reversements", icon: ShieldCheck, hiddenForEditor: true },
-    { label: "Catégories", href: "/admin/categories", icon: Layers, hiddenForEditor: false },
+    { label: "Catégories", href: "/admin/categories", icon: Boxes, hiddenForEditor: false },
     { label: "Thème Officiel (CR4)", href: "/admin/theme", icon: Palette, hiddenForEditor: true },
     { label: "Pages /p/[slug] (CR4)", href: "/admin/pages", icon: FileText, hiddenForEditor: false },
     { label: "Contenus & Bannières", href: "/admin/contenus", icon: Sliders, hiddenForEditor: false },
