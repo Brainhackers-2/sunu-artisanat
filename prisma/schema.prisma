@@ -1,5 +1,7 @@
-// Prisma schema for SUNU ARTISANAT
-// Source of truth: docs/cahier-des-charges.md
+// ==============================================================================
+// SUNU ARTISANAT — Schéma de Données Prisma Unifié v2.0
+// Source de vérité : docs/cahier-des-charges.md (Sections 9 et 6)
+// ==============================================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -11,13 +13,609 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Initial Phase 1 models to validate Prisma setup and Supabase connection
-model Setting {
+// ------------------------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------------------------
+
+enum Role {
+  CLIENT
+  ARTISAN
+  EDITOR
+  ADMIN
+  SUPERADMIN
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  BOTH
+}
+
+enum ArtisanStatus {
+  PENDING
+  APPROVED
+  MORE_INFO_REQUESTED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum AvailabilityType {
+  IN_STOCK
+  UNIQUE_PIECE
+  ON_DEMAND
+}
+
+enum SubOrderStatus {
+  PENDING_PAYMENT    // En attente de paiement
+  PAID               // Payée
+  ACCEPTED           // Acceptée
+  IN_PREPARATION     // En préparation
+  SHIPPED            // Expédiée
+  DELIVERED          // Livrée
+  REJECTED           // Refusée
+  CANCELLED          // Annulée
+}
+
+enum PaymentStatus {
+  PENDING            // En attente
+  PAID               // Payé
+  FAILED             // Échec
+  TO_COLLECT         // À encaisser
+  REFUNDED           // Remboursé
+  SIMULATED          // Simulé
+}
+
+enum PaymentMethod {
+  WAVE
+  ORANGE_MONEY
+  CARD
+  CASH_ON_DELIVERY
+  SIMULATION
+}
+
+enum DeliveryType {
+  HOME               // Domicile
+  RELAY_POINT        // Point relais
+  WORKSHOP_PICKUP    // Retrait atelier
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_PAID
+  ORDER_ACCEPTED
+  ORDER_PREPARING
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_REJECTED
+  ORDER_CANCELLED
+  ARTISAN_APPROVED
+  ARTISAN_REJECTED
+  ARTISAN_MORE_INFO
+  PRODUCT_APPROVED
+  PRODUCT_REJECTED
+  LOW_STOCK
+  SYSTEM_ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+// ------------------------------------------------------------------------------
+// 1. UTILISATEURS & AUTHENTIFICATION
+// ------------------------------------------------------------------------------
+
+model User {
+  id                  String              @id @default(cuid())
+  email               String?             @unique
+  phone               String?             @unique // Format E.164 ou standard Sénégal
+  name                String?
+  passwordHash        String?
+  avatarUrl           String?
+  preferredChannel    NotificationChannel @default(EMAIL)
+  emailVerified       DateTime?
+  phoneVerified       DateTime?
+  resetToken          String?             @unique
+  resetTokenExpires   DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  roles               UserRole[]
+  customerProfile     CustomerProfile?
+  artisanProfile      ArtisanProfile?
+  orders              Order[]
+  reviews             Review[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  aiConversations     AIConversation[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model UserRole {
   id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
+  userId    String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([userId])
+}
+
+model CustomerProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  firstName      String?
+  lastName       String?
+  birthDate      DateTime?
+  preferredCity  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addresses      Address[]
+}
+
+model Address {
+  id                String           @id @default(cuid())
+  customerProfileId String?
+  fullName          String
+  phone             String
+  streetAddress     String
+  city              String           // ex: Dakar, Thiès, Ziguinchor, Saint-Louis
+  region            String           // Région administrative
+  postalCode        String?
+  country           String           @default("Sénégal")
+  deliveryNotes     String?
+  isDefault         Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  customerProfile   CustomerProfile? @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  deliveries        Delivery[]
+
+  @@index([customerProfileId])
+}
+
+// ------------------------------------------------------------------------------
+// 2. ATELIERS & ARTISANS
+// ------------------------------------------------------------------------------
+
+model ArtisanProfile {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  workshopName        String             // Nom de l'atelier
+  slug                String             @unique // Pour l'URL /artisans/[slug]
+  specialty           String             // Maroquinerie, Bijouterie, Poterie, etc.
+  bio                 String             @db.Text
+  experienceYears     Int                @default(0)
+  city                String             // Ville d'implantation
+  region              String             // Région : Dakar, Thiès, Ziguinchor, Saint-Louis, etc.
+  address             String?
+  phone               String
+  whatsappPhone       String?
+  logoUrl             String?
+  coverUrl            String?
+  status              ArtisanStatus      @default(PENDING)
+  rejectionReason     String?            @db.Text
+  verified            Boolean            @default(false)
+  isDemo              Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents           ArtisanDocument[]
+  products            Product[]
+  subOrders           SubOrder[]
+  payouts             Payout[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([region])
+}
+
+model ArtisanDocument {
+  id                String         @id @default(cuid())
+  artisanProfileId  String
+  name              String
+  fileUrl           String
+  documentType      String         // Carte artisan, NINEA, Registre, etc.
+  createdAt         DateTime       @default(now())
+
+  artisanProfile    ArtisanProfile @relation(fields: [artisanProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artisanProfileId])
+}
+
+// ------------------------------------------------------------------------------
+// 3. CATALOGUE & PRODUITS
+// ------------------------------------------------------------------------------
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?    @db.Text
+  imageUrl    String?
+  parentId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+model Product {
+  id                  String           @id @default(cuid())
+  artisanProfileId    String
+  categoryId          String
+  title               String
+  slug                String           @unique
+  description         String           @db.Text
+  priceFCFA           Int              // Montant entier en FCFA (sans décimales)
+  indicativePriceEUR  Float?           // Prix indicatif en euros pour l'international
+  status              ProductStatus    @default(DRAFT)
+  rejectionReason     String?          @db.Text
+  availabilityType    AvailabilityType @default(IN_STOCK)
+  manufacturingDays   Int?             // Délai de fabrication pour SUR COMMANDE
+  dimensions          String?          // ex: 25 x 15 x 10 cm
+  weightKg            Float?
+  originRegion        String           // Région d'origine déclarée (ex: Casamance, Thiès)
+  technique           String           // ex: Filigrane d'or, Cuir tanné végétal, etc.
+  isFeatured          Boolean          @default(false)
+  isDemo              Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Relations
+  artisan             ArtisanProfile   @relation(fields: [artisanProfileId], references: [id], onDelete: Restrict)
+  category            Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images              ProductImage[]
+  materials           ProductMaterial[]
+  inventory           Inventory?
+  orderItems          OrderItem[]
+  cartItems           CartItem[]
+  reviews             Review[]
+  qrCodes             QRCode[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([artisanProfileId])
+  @@index([categoryId])
+  @@index([originRegion])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  position  Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductMaterial {
+  id        String   @id @default(cuid())
+  productId String
+  name      String   // Cuir de chèvre, Bois d'ébène, Fil d'or 18k, Argile rouge
+  origin    String?  // Thiès, Ziguinchor, etc.
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Inventory {
+  id                String   @id @default(cuid())
+  productId         String   @unique
+  quantity          Int      @default(0)
+  reservedQuantity  Int      @default(0) // Réservé pendant le paiement
+  lowStockThreshold Int      @default(2)
+  updatedAt         DateTime @updatedAt
+
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------------------------------------------------------
+// 4. PANIER & COMMANDE MULTI-ARTISANS
+// ------------------------------------------------------------------------------
+
+model Cart {
+  id          String     @id @default(cuid())
+  sessionId   String?    @unique // Pour les visiteurs non connectés
+  userId      String?    @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  items       CartItem[]
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  orderNumber       String      @unique // Format: SUNU-AAAAMMJJ-NNN
+  userId            String?     // Nullable si commande invité / sans compte
+  customerName      String
+  customerEmail     String
+  customerPhone     String      // Obligatoire au Sénégal
+  trackingToken     String      @unique @default(cuid()) // Lien de suivi invité
+  totalAmountFCFA   Int         // Total global incluant livraisons
+  isDemo            Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subOrders         SubOrder[]
+  payments          Payment[]
+  invoices          Invoice[]
+
+  @@index([orderNumber])
+  @@index([userId])
+  @@index([trackingToken])
+}
+
+model SubOrder {
+  id                String         @id @default(cuid())
+  orderId           String
+  artisanProfileId  String
+  subOrderNumber    String         @unique // ex: SUNU-AAAAMMJJ-NNN-A1
+  status            SubOrderStatus @default(PENDING_PAYMENT)
+  subTotalFCFA      Int            // Sous-total articles
+  deliveryFeeFCFA   Int            @default(0) // Frais de livraison pour cet artisan
+  commissionFCFA    Int            @default(0) // Part commission de la plateforme
+  artisanPartFCFA   Int            // Part artisan = subTotal - commission
+  rejectionReason   String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artisan           ArtisanProfile @relation(fields: [artisanProfileId], references: [id], onDelete: Restrict)
+  items             OrderItem[]
+  delivery          Delivery?
+
+  @@index([orderId])
+  @@index([artisanProfileId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                String    @id @default(cuid())
+  subOrderId        String
+  productId         String
+  unitPriceFCFA     Int       // Prix figé à l'achat
+  quantity          Int
+  totalPriceFCFA    Int       // unitPrice * quantity
+  commissionRate    Float     // Taux de commission figé (ex: 0.10)
+  commissionFCFA    Int       // Montant commission figé
+  artisanPartFCFA   Int       // Part artisan figée
+  createdAt         DateTime  @default(now())
+
+  subOrder          SubOrder  @relation(fields: [subOrderId], references: [id], onDelete: Cascade)
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  reviews           Review[]
+
+  @@index([subOrderId])
+  @@index([productId])
+}
+
+// ------------------------------------------------------------------------------
+// 5. PAIEMENTS, LIVRAISONS & REVERSEMENTS
+// ------------------------------------------------------------------------------
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  amountFCFA        Int
+  status            PaymentStatus @default(PENDING)
+  method            PaymentMethod @default(SIMULATION)
+  transactionRef    String?       @unique // Référence passerelle (PayTech/Wave/OM)
+  isSimulated       Boolean       @default(false)
+  collectedByAdmin  Boolean       @default(false) // Pour le paiement à la livraison
+  collectedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@index([transactionRef])
+}
+
+model Courier {
+  id            String     @id @default(cuid())
+  name          String     // Nom complet du livreur
+  phone         String     // Téléphone WhatsApp
+  companyName   String?    // Société ou indépendant
+  coverageZone  String     // Dakar, Thiès, Casamance, etc.
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  deliveries    Delivery[]
+
+  @@index([coverageZone])
+}
+
+model Delivery {
+  id                  String       @id @default(cuid())
+  subOrderId          String       @unique
+  addressId           String?
+  courierId           String?
+  deliveryType        DeliveryType @default(HOME)
+  trackingNumber      String?
+  amountToCollectFCFA Int          @default(0) // Si paiement à la livraison
+  isAmountRemitted    Boolean      @default(false) // Remise d'argent enregistrée par admin
+  remittedAt          DateTime?
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  subOrder            SubOrder     @relation(fields: [subOrderId], references: [id], onDelete: Cascade)
+  address             Address?     @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  courier             Courier?     @relation(fields: [courierId], references: [id], onDelete: SetNull)
+
+  @@index([courierId])
+  @@index([addressId])
+}
+
+model Payout {
+  id                String         @id @default(cuid())
+  artisanProfileId  String
+  amountFCFA        Int
+  method            String         // Wave, Orange Money, Virement
+  recipientPhone    String
+  reference         String?
+  isCompleted       Boolean        @default(false)
+  processedAt       DateTime?
+  createdAt         DateTime       @default(now())
+
+  artisan           ArtisanProfile @relation(fields: [artisanProfileId], references: [id], onDelete: Restrict)
+
+  @@index([artisanProfileId])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  orderId       String
+  invoiceNumber String   @unique // ex: FACT-2026-NNNNN
+  pdfUrl        String?
+  legalNote     String?  @default("Émise par SUNU ARTISANAT. Mentions légales NINEA / TVA en cours de confirmation.")
+  createdAt     DateTime @default(now())
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// ------------------------------------------------------------------------------
+// 6. TRAÇABILITÉ (QR CODES) & AVIS CLIENTS
+// ------------------------------------------------------------------------------
+
+model QRCode {
+  id              String   @id @default(cuid())
+  productId       String
+  code            String   @unique // Code public vérifiable /certification/[code]
+  serialNumber    String   @unique // ex: SN-ART-2026-0001
+  declaredOrigin  String   // Atelier vérifié, Ville, Région
+  craftingDate    DateTime @default(now())
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([serialNumber])
+}
+
+model Review {
+  id            String     @id @default(cuid())
+  productId     String
+  orderItemId   String?
+  userId        String
+  rating        Int        // De 1 à 5
+  comment       String     @db.Text
+  isVerified    Boolean    @default(true) // Badge achat vérifié
+  isApproved    Boolean    @default(false) // Modération admin obligatoire
+  artisanReply  String?    @db.Text
+  repliedAt     DateTime?
+  isDemo        Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+}
+
+// ------------------------------------------------------------------------------
+// 7. ADMINISTRATION, CMS & MODULES (CR4)
+// ------------------------------------------------------------------------------
+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique // ex: /p/[slug], cgv, confidentialite, mentions-legales
+  title       String
+  content     String   @db.Text
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model ContentBlock {
+  id        String   @id @default(cuid())
+  key       String   @unique // ex: home.hero.title, footer.contact.phone
+  value     String   @db.Text
+  locale    String   @default("fr")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  key       String   @unique // ex: home.logo, home.hero.banner
+  url       String
+  altText   String?
+  mimeType  String?
+  sizeBytes Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
 }
 
 model Theme {
@@ -37,10 +635,85 @@ model Theme {
 
 model Module {
   id          String   @id @default(cuid())
-  code        String   @unique // ex: GROQ_AI, RESEND_EMAIL, WHATSAPP_NOTIF, LIVE_PAYMENT
+  code        String   @unique // GROQ_AI, RESEND_EMAIL, WHATSAPP_NOTIF, LIVE_PAYMENT, VOICE_ASSISTANT
   name        String
   description String?
   isEnabled   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([code])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique // commission_rate, delivery_rate_dakar, etc.
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+// ------------------------------------------------------------------------------
+// 8. SÉCURITÉ, SESSIONS, NOTIFICATIONS & AUDIT
+// ------------------------------------------------------------------------------
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   // IP, userId ou route
+  points    Int      @default(0)
+  expireAt  DateTime
+
+  @@index([key, expireAt])
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String             @db.Text
+  linkUrl   String?
+  channel   NotificationChannel @default(EMAIL)
+  status    NotificationStatus  @default(PENDING)
+  readAt    DateTime?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String   // VALIDATE_ARTISAN, REJECT_PRODUCT, UPDATE_THEME, etc.
+  targetType String   // ARTISAN, PRODUCT, ORDER, SETTING
+  targetId   String?
+  metadata   String?  @db.Text // JSON string
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([targetType])
+  @@index([userId])
+}
+
+model AIConversation {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  messages  String   @db.Text // Format JSON messages
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
 }
