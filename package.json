@@ -11,6 +11,7 @@
     "test": "tsx tests/test-auth-permissions.ts",
     "test:cr4": "tsx tests/test-cr4-admin.ts",
     "test:catalogue": "tsx tests/test-catalogue.ts",
+    "test:orders": "tsx tests/test-orders-multivendor.ts",
     "prisma:generate": "prisma generate",
     "prisma:seed": "node prisma/seed.js"
   },

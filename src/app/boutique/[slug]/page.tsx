@@ -5,6 +5,7 @@ import ProductGallery from "@/components/catalogue/ProductGallery";
 import ReviewsList from "@/components/catalogue/ReviewsList";
 import RatingStars from "@/components/ui/RatingStars";
 import QRBadge from "@/components/ui/QRBadge";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -218,19 +219,7 @@ export default async function ProductPage({ params }: Props) {
 
             {/* Bouton ajout panier — sticky barre mobile */}
             <div className="fixed bottom-0 left-0 right-0 md:static bg-white md:bg-transparent border-t border-gray-200 md:border-0 p-4 md:p-0 z-30">
-              {stock > 0 ? (
-                <button
-                  className="w-full bg-[var(--color-primary)] text-white font-bold py-3 rounded-xl hover:opacity-90 transition min-h-[52px] text-base"
-                  disabled
-                  title="Panier disponible en phase 6"
-                >
-                  Ajouter au panier
-                </button>
-              ) : (
-                <button disabled className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl cursor-not-allowed min-h-[52px] text-base">
-                  Indisponible
-                </button>
-              )}
+              <AddToCartButton productId={product.id} stock={stock} />
             </div>
 
             {/* QR Code traçabilité */}

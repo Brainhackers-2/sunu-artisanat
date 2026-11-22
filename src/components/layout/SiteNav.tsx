@@ -9,6 +9,7 @@ import SignOutButton from "@/components/auth/SignOutButton";
 const NAV_LINKS = [
   { href: "/boutique", label: "Boutique" },
   { href: "/artisans", label: "Artisans" },
+  { href: "/panier", label: "Panier 🛒" },
 ];
 
 export default function SiteNav() {
