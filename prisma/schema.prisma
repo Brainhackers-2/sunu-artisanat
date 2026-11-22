@@ -1,0 +1,46 @@
+// Prisma schema for SUNU ARTISANAT
+// Source of truth: docs/cahier-des-charges.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Initial Phase 1 models to validate Prisma setup and Supabase connection
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Theme {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  isDefault       Boolean  @default(false)
+  colorForest     String   @default("#125B3E")
+  colorGold       String   @default("#FFB800")
+  colorTerracotta String   @default("#C2410C")
+  colorEbony      String   @default("#131622")
+  colorIvory      String   @default("#FAF8F5")
+  fontSans        String   @default("Inter")
+  fontHeading     String   @default("Playfair Display")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  code        String   @unique // ex: GROQ_AI, RESEND_EMAIL, WHATSAPP_NOTIF, LIVE_PAYMENT
+  name        String
+  description String?
+  isEnabled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default Senegal Theme values (overridable via Admin Theme in DB) */
+  --color-forest: #125B3E;
+  --color-gold: #FFB800;
+  --color-terracotta: #C2410C;
+  --color-ebony: #131622;
+  --color-ivory: #FAF8F5;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-ivory);
+  color: var(--color-ebony);
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-ivory);
+  color: var(--color-ebony);
+  margin: 0;
+  padding: 0;
+}
+
+/* Mobile-first tactile target rules (>= 44px) */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Prevent auto-zoom on iOS safari with 16px minimum font size */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
