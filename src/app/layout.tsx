@@ -4,6 +4,7 @@ import { DynamicTheme } from "@/components/theme/DynamicTheme";
 import SiteNav from "@/components/layout/SiteNav";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SunuVoiceBot from "@/components/ai/SunuVoiceBot";
+import FloatingButtons from "@/components/layout/FloatingButtons";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "SUNU ARTISANAT — Marketplace d'artisanat d'art sénégalais",
-    description: "Découvrez et commandez des pièces d'artisanat sénégalais authentiques avec traçabilité vérifiée.",
+    description: "Découvrez et commandez des pièces d'artisanat sénégalais avec traçabilité d'origine déclarée.",
     siteName: "SUNU ARTISANAT",
     images: [
       {
@@ -54,13 +55,16 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/images/logo.png" />
         <DynamicTheme />
       </head>
-      <body className="min-h-full flex flex-col antialiased">
+      <body className="min-h-full flex flex-col antialiased bg-[#FAF8F5]">
         <AuthProvider>
-            <SiteNav />
-            <div className="flex-1">{children}</div>
-            <SunuVoiceBot />
-            <SiteFooter />
-          </AuthProvider>
+          <SiteNav />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+          {/* Boutons flottants : WhatsApp + Sunu Bot (Section 8.1 CDC) */}
+          <FloatingButtons />
+          {/* Assistant vocal (montré dans FloatingButtons via dialog) */}
+          <SunuVoiceBot />
+        </AuthProvider>
       </body>
     </html>
   );
