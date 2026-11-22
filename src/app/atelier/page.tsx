@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Hammer, Package, AlertTriangle, CheckCircle2, Clock, MapPin, Store } from "lucide-react";
 import SignOutButton from "@/components/auth/SignOutButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function AtelierDashboardPage() {
   const user = await getSessionUser();
   if (!user || !user.roles.includes("ARTISAN")) {

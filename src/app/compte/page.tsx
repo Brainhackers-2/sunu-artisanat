@@ -6,6 +6,8 @@ import Link from "next/link";
 import { User, ShoppingBag, Shield, Bell, MapPin, LogOut } from "lucide-react";
 import SignOutButton from "@/components/auth/SignOutButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function ComptePage() {
   const user = await getSessionUser();
   if (!user) {

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { DynamicTheme } from "@/components/theme/DynamicTheme";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -48,6 +49,7 @@ export default function RootLayout({
     <html lang="fr" className="h-full">
       <head>
         <link rel="apple-touch-icon" href="/images/logo.png" />
+        <DynamicTheme />
       </head>
       <body className="min-h-full flex flex-col antialiased">
         <AuthProvider>{children}</AuthProvider>
