@@ -3,6 +3,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { DynamicTheme } from "@/components/theme/DynamicTheme";
 import SiteNav from "@/components/layout/SiteNav";
 import SiteFooter from "@/components/layout/SiteFooter";
+import SunuVoiceBot from "@/components/ai/SunuVoiceBot";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -57,6 +58,7 @@ export default function RootLayout({
         <AuthProvider>
             <SiteNav />
             <div className="flex-1">{children}</div>
+            <SunuVoiceBot />
             <SiteFooter />
           </AuthProvider>
       </body>

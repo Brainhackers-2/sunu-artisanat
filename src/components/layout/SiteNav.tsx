@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import SignOutButton from "@/components/auth/SignOutButton";
+import InstallPWAButton from "@/components/pwa/InstallPWAButton";
 
 const NAV_LINKS = [
   { href: "/boutique", label: "Boutique" },
@@ -42,6 +43,9 @@ export default function SiteNav() {
 
         {/* Actions droite */}
         <div className="flex items-center gap-3">
+          <div className="hidden lg:block">
+            <InstallPWAButton />
+          </div>
           {session ? (
             <>
               {session.user.roles?.includes("ADMIN") && (
