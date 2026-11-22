@@ -1,37 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, Bot } from "lucide-react";
+import { MessageCircle, Sparkles } from "lucide-react";
 
 const WHATSAPP_URL =
   "https://wa.me/221771234567?text=Bonjour%20Sunu%20Artisanat%2C%20j'ai%20une%20question%20concernant%20une%20création%20artisanale.";
 
 export default function FloatingButtons() {
   return (
-    <div className="fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3">
-      {/* Bouton Sunu Bot */}
+    <aside
+      aria-label="Assistance et Support Rapide"
+      className="fixed bottom-6 right-5 z-50 flex flex-col items-center gap-3.5"
+    >
+      {/* Bouton Sunu Bot IA Vocal : Bouton rond compact jaune or (w-12 h-12 bg-[#FFB800] text-[#131622] shadow-xl hover:scale-110 transition) avec icône étincelles */}
       <Link
-        href="/assistant"
-        aria-label="Sunu Bot — Assistant IA"
-        title="Sunu Bot — Découvrez nos créations par la voix"
-        className="group flex items-center gap-2 bg-[#131622] text-white pl-3 pr-4 py-2.5 rounded-2xl shadow-xl hover:bg-stone-800 transition-all min-h-[48px]"
+        href="/diagnostic-ia"
+        aria-label="Ouvrir Sunu Bot — Assistant IA Vocal"
+        title="Sunu Bot IA — Diagnostic & Découverte Vocale"
+        className="w-12 h-12 rounded-full bg-[#FFB800] text-[#131622] shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center border-2 border-white/60 group"
       >
-        <Bot className="w-5 h-5 text-[#FFB800] shrink-0" />
-        <span className="text-xs font-semibold hidden sm:block whitespace-nowrap">Sunu Bot</span>
+        <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
       </Link>
 
-      {/* Bouton WhatsApp */}
+      {/* Bouton WhatsApp : Bouton rond compact vert officiel (w-12 h-12 bg-[#25D366] text-white shadow-xl hover:scale-110 transition) */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Nous contacter sur WhatsApp"
-        title="Contacter l'équipe Sunu Artisanat sur WhatsApp"
-        className="flex items-center gap-2 bg-[#25D366] text-white pl-3 pr-4 py-2.5 rounded-2xl shadow-xl hover:bg-[#1ebe59] transition-all min-h-[48px]"
+        aria-label="Discussion directe WhatsApp Support Dakar"
+        title="Contacter le support SUNU ARTISANAT sur WhatsApp"
+        className="w-12 h-12 rounded-full bg-[#25D366] text-white shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center border-2 border-white/60"
       >
-        <MessageCircle className="w-5 h-5 shrink-0" />
-        <span className="text-xs font-semibold hidden sm:block whitespace-nowrap">WhatsApp Dakar</span>
+        <MessageCircle className="w-6 h-6" />
       </a>
-    </div>
+    </aside>
   );
 }

@@ -371,3 +371,51 @@ export async function assignCourierToDeliveryAction(deliveryId: string, courierI
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Mise à jour du profil d'atelier par l'artisan (logoUrl, coverUrl, bio, etc.)
+ */
+export async function updateArtisanProfileAction(data: {
+  workshopName: string;
+  specialty: string;
+  city: string;
+  region: string;
+  experienceYears: number;
+  bio: string;
+  logoUrl?: string;
+  coverUrl?: string;
+}) {
+  try {
+    const user = await getSessionUser();
+    if (!user || !user.artisanProfileId) {
+      return { success: false, error: "Compte artisan requis" };
+    }
+
+    const updated = await prisma.artisanProfile.update({
+      where: { id: user.artisanProfileId },
+      data: {
+        workshopName: data.workshopName,
+        specialty: data.specialty,
+        city: data.city,
+        region: data.region,
+        experienceYears: data.experienceYears,
+        bio: data.bio,
+        logoUrl: data.logoUrl || null,
+        coverUrl: data.coverUrl || null,
+      },
+    });
+
+    try {
+      revalidatePath("/atelier");
+      revalidatePath("/artisan/dashboard");
+      revalidatePath(`/artisans/${updated.slug}`);
+      revalidatePath(`/artisan/${updated.slug}`);
+    } catch {}
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Erreur updateArtisanProfileAction:", error);
+    const msg = error instanceof Error ? error.message : "Erreur lors de la mise à jour";
+    return { success: false, error: msg };
+  }
+}
