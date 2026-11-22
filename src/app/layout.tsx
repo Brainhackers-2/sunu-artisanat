@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { DynamicTheme } from "@/components/theme/DynamicTheme";
+import SiteNav from "@/components/layout/SiteNav";
+import SiteFooter from "@/components/layout/SiteFooter";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -52,7 +54,11 @@ export default function RootLayout({
         <DynamicTheme />
       </head>
       <body className="min-h-full flex flex-col antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+            <SiteNav />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+          </AuthProvider>
       </body>
     </html>
   );
